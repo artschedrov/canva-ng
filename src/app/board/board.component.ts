@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import Konva from 'konva';
 import { ShapeService } from './shared/shape.service';
 import { TextNodeService } from './shared/text-node.service';
+import { createWorker } from 'tesseract.js';
 
 @Component({
   selector: 'app-board',
@@ -23,22 +24,43 @@ export class BoardComponent implements OnInit {
   erase: boolean = false;
   transformers: Konva.Transformer[] = [];
 
+  ocrResult = 'Recognizing...';
+
+  filePNG: any;
+  finishFile = localStorage.getItem("raw")
   constructor(
     private shapeService: ShapeService,
     private textNodeService: TextNodeService
-  ) { }
+  ) { 
+    //this.doOCR();
+  }
+
+  async doOCR() {
+    const worker = createWorker({
+      logger: m => console.log(m),
+    });
+    await worker.load();
+    await worker.loadLanguage('eng');
+    await worker.initialize('eng');
+    const { data: { text } } = await worker.recognize(this.finishFile!);
+    this.ocrResult = text;
+    console.log(text);
+    await worker.terminate();
+  }
 
   ngOnInit() {
-    let width = window.innerWidth * 0.9;
+    let width = window.innerWidth * 0.4;
     let height = window.innerHeight;
     this.stage = new Konva.Stage({
       container: 'container',
-      width: width,
-      height: height
+      width: 500,
+      height: 500
     });
     this.layer = new Konva.Layer();
     this.stage.add(this.layer);
     this.addLineListeners();
+    let currCanvas = document.querySelector('.konvajs-content');
+    console.log(currCanvas?.childNodes[0]);
   }
 
   clearSelection() {
@@ -175,4 +197,24 @@ export class BoardComponent implements OnInit {
   clearBoard() {
     location.reload();
   }
+
+  downloadURI(uri: string, name: string) {
+    let link = document.createElement('a');
+    link.download = name;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    //delete link;
+  }
+
+  saveToFile() {
+    let dataUrl = this.stage.toDataURL();
+    if (localStorage.getItem('raw') !== null) {
+      localStorage.removeItem("raw");
+    }
+    this.filePNG = localStorage.setItem("raw", dataUrl);
+    //this.downloadURI(dataUrl, 'stage.png');
+  }
+
 }
