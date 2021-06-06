@@ -8,5 +8,12 @@
   <button (click)='clearSelection(); setSelection("undo"); undo()'>Undo</button>
   <button (click)='clearSelection(); setSelection("erase"); erase = true'>Erase</button>
   <button (click)='clearBoard()'>Clear</button>
+  <button (click)='saveToFile()' >Save to file</button>
 </div>
 <div id="container"></div>
+
+<button (click)='doOCR()'>Tess</button>
+
+<p>
+  {{ ocrResult }}
+</p>
