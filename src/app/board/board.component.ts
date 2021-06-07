@@ -3,6 +3,7 @@ import Konva from 'konva';
 import { ShapeService } from './shared/shape.service';
 import { TextNodeService } from './shared/text-node.service';
 import { createWorker } from 'tesseract.js';
+import * as Tesseract from 'tesseract.js';
 
 @Component({
   selector: 'app-board',
@@ -27,7 +28,8 @@ export class BoardComponent implements OnInit {
   ocrResult = 'Recognizing...';
 
   filePNG: any;
-  finishFile = localStorage.getItem("raw")
+  finishFile: any;
+  link: any;
   constructor(
     private shapeService: ShapeService,
     private textNodeService: TextNodeService
@@ -35,18 +37,18 @@ export class BoardComponent implements OnInit {
     //this.doOCR();
   }
 
-  async doOCR() {
-    const worker = createWorker({
-      logger: m => console.log(m),
-    });
-    await worker.load();
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
-    const { data: { text } } = await worker.recognize(this.finishFile!);
-    this.ocrResult = text;
-    console.log(text);
-    await worker.terminate();
-  }
+  // async doOCR() {
+  //   const worker = createWorker({
+  //     logger: m => console.log(m),
+  //   });
+  //   await worker.load();
+  //   await worker.loadLanguage('eng');
+  //   await worker.initialize('eng');
+  //   const { data: { text } } = await worker.recognize(this.finishFile!);
+  //   this.ocrResult = text;
+  //   console.log(text);
+  //   await worker.terminate();
+  // }
 
   ngOnInit() {
     let width = window.innerWidth * 0.4;
@@ -62,6 +64,14 @@ export class BoardComponent implements OnInit {
     let currCanvas = document.querySelector('.konvajs-content');
     console.log(currCanvas?.childNodes[0]);
   }
+
+  recognize() {
+    let dataUrl = this.stage.toDataURL();
+    localStorage.setItem("raw", dataUrl);
+    this.finishFile = localStorage.getItem("raw");
+    return Tesseract.recognize(this.finishFile!).then(({data: {text}}) => { return this.ocrResult = text});
+  }
+  
 
   clearSelection() {
     Object.keys(this.selectedButton).forEach(key => {
@@ -205,15 +215,14 @@ export class BoardComponent implements OnInit {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    //delete link;
+    delete this.link;
   }
 
   saveToFile() {
     let dataUrl = this.stage.toDataURL();
-    if (localStorage.getItem('raw') !== null) {
-      localStorage.removeItem("raw");
-    }
-    this.filePNG = localStorage.setItem("raw", dataUrl);
+    localStorage.setItem("raw", dataUrl);
+    // 
+    this.finishFile = localStorage.getItem("raw");
     //this.downloadURI(dataUrl, 'stage.png');
   }
 
